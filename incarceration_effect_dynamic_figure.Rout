@@ -1,0 +1,398 @@
+
+R version 3.3.0 beta (2016-03-30 r70404) -- "Supposedly Educational"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> 
+> ###########################################################################################################################
+> # Dynamic effect of incarceration according to different time measures of recidivism
+> ###########################################################################################################################
+> 
+> rm(list=ls())
+> library(ggplot2)
+> library(xtable)
+> library(foreign)
+> library(MASS)
+> library(dummies)
+dummies-1.5.6 provided by Decision Patterns
+
+> library(stargazer)
+
+Please cite as: 
+
+ Hlavac, Marek (2015). stargazer: Well-Formatted Regression and Summary Statistics Tables.
+ R package version 5.2. http://CRAN.R-project.org/package=stargazer 
+
+> library(ggthemes)
+> library(AER)
+Loading required package: car
+Loading required package: lmtest
+Loading required package: zoo
+
+Attaching package: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+Loading required package: sandwich
+Loading required package: survival
+Loading required package: splines
+> library(multiwayvcov)
+> 
+> # Date and time packages:
+> library(lubridate)
+
+Attaching package: ‘lubridate’
+
+The following object is masked from ‘package:base’:
+
+    date
+
+> 
+> # loading the data:
+> d=read.dta("~/Dropbox/crime/recidivism/data/GreenWinik_Criminology_2010_LimitedAnonymizedDataset.2.dta")
+> dirCode = "~/Dropbox/crime/recidivism/Rcode"
+> dirFigures = "~/Dropbox/crime/recidivism/figures"
+> 
+> cov.names = c("age" ,"agesq" ,"female" ,"nonblack" ,"priorarr" ,"priordrugarr" ,
++               "priorfelarr" ,"priorfeldrugarr" ,"priorcon" ,"priordrugcon" ,"priorfelcon" ,
++               "priorfeldrugcon" ,"pwid" ,"dist" ,"marijuana" ,"cocaine" ,"crack" ,
++               "heroin" ,"pcp" ,"otherdrug" ,"nondrug")
+> head(d)
+  pickupdate birthyear gender race disposition  dispdate   sentdate
+1  7/23/2002      1979      M    B   Dismissed 3/27/2003           
+2 11/27/2002      1980      M    B        Plea 1/21/2003   4/3/2003
+3   1/6/2003      1979      M    B   Dismissed 1/24/2003           
+4 11/14/2002      1964      F    B        Plea  4/9/2003 12/12/2003
+5 11/14/2002      1974      F    B   Dismissed 3/20/2003           
+6  1/30/2003      1972      M    B        Plea  4/8/2003  6/10/2003
+  felonycharges highestcharge nondrug     drug1     drug2 incarc suspend probat
+1             1          pwid       0       pcp         0      0    0.00      0
+2             1          dist       0 marijuana         0     12    7.16     24
+3             1          pwid       0    heroin marijuana      0    0.00      0
+4             1          dist       0   cocaine         0    120  120.00     24
+5             1          pwid       0     crack         0      0    0.00      0
+6             2          dist       1 marijuana         0     12   12.00     12
+  priorarr priorfelarr priordrugarr priorfeldrugarr priorcon priorfelcon
+1        1           0            0               0        0           0
+2        1           1            1               0        1           0
+3        1           0            1               0        1           0
+4        1           1            1               1        1           1
+5        1           0            1               0        0           0
+6        1           1            1               1        1           1
+  priordrugcon priorfeldrugcon laterarr laterarrdate laterfelarr
+1            0               0        1    5/19/2004           1
+2            1               0        1    9/28/2005           1
+3            1               0        1    8/17/2004           1
+4            1               1        0            0           0
+5            0               0        0            0           0
+6            1               1        1    2/17/2005           1
+  laterfelarrdate laterdrugarr laterdrugarrdate laterfeldrugarr
+1       5/19/2004            1        5/19/2004               1
+2       9/28/2005            1        9/28/2005               1
+3       8/17/2004            1        8/17/2004               1
+4               0            0                0               0
+5               0            0                0               0
+6       2/17/2005            1        2/17/2005               1
+  laterfeldrugarrdate latercon latercondate laterfelcon laterfelcondate
+1           5/19/2004        1    7/23/2004           1       7/23/2004
+2           9/28/2005        1   11/14/2005           1      11/14/2005
+3           8/17/2004        1    3/11/2005           0               0
+4                   0        0            0           0               0
+5                   0        0            0           0               0
+6           2/17/2005        1    3/21/2007           1       3/21/2007
+  laterdrugcon laterdrugcondate laterfeldrugcon laterfeldrugcondate probrevoke
+1            1        7/23/2004               1           7/23/2004          0
+2            1       11/14/2005               1          11/14/2005          1
+3            1        3/11/2005               0                   0          0
+4            0                0               0                   0          0
+5            0                0               0                   0          0
+6            1        3/21/2007               1           3/21/2007          0
+  probrevokedate codef clusterid    ccn datacoder cutoffdate1 cutoffdate2
+1              0     0       236 121453         1       17714       17898
+2      2/07/2006     0       668 188341         1       17714       17898
+3              0     0      2803  14713         1       17714       17898
+4              0     0       606 181731         1       17714       17898
+5              0     0       607 181528         1       17714       17898
+6              0     0       934  26093         2       17714       17898
+  cutoffdate3 toserve fullreleasetorecid female nonblack pickupdatecode age
+1       18049    0.00           419.0000      0        0          15544  23
+2       18049    4.84           835.7998      0        0          15671  22
+3       18049    0.00           571.0000      0        0          15711  24
+4       18049    0.00          9999.0000      1        0          15658  38
+5       18049    0.00          9999.0000      1        0          15658  28
+6       18049    0.00           681.0000      0        0          15735  31
+  agesq incjudge calendar1 calendar2 calendar3 calendar4 calendar5 calendar6
+1   529        1         1         0         0         0         0         0
+2   484        1         1         0         0         0         0         0
+3   576        1         1         0         0         0         0         0
+4  1444        1         1         0         0         0         0         0
+5   784        1         1         0         0         0         0         0
+6   961        1         1         0         0         0         0         0
+  calendar7 calendar8 calendar9 calendar incarcerate marijuana cocaine crack
+1         0         0         0        1           0         0       0     0
+2         0         0         0        1           1         1       0     0
+3         0         0         0        1           0         1       0     0
+4         0         0         0        1           0         0       1     0
+5         0         0         0        1           0         0       0     1
+6         0         0         0        1           0         1       0     0
+  heroin pcp otherdrug pwid dist conviction probatnonzero probsuspend
+1      0   1         0    1    0          0             0        0.00
+2      0   0         0    0    1          1             1      171.84
+3      1   0         0    1    0          0             0        0.00
+4      0   0         0    0    1          1             1     2880.00
+5      0   0         0    1    0          0             0        0.00
+6      0   0         0    0    1          1             1      144.00
+> 
+> ####################################################################################
+> ### Define Jackknife IV, leave-one-out estimators
+> ####################################################################################
+> 
+> d$loo.judge = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge[i] = mean(d$incarcerate[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.serve = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.serve[i] = mean(d$toserve[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.conv = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.conv[i] = mean(d$conviction[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.prob = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.prob[i] = mean(d$probat[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> ### Defining binary IV:
+> 
+> d$z.incar = (d$calendar %in% c(1:9)[order(tapply(d$incarcerate,d$calendar,mean))][6:9])*1
+> d$z.serve = (d$calendar %in% c(1:9)[order(tapply(d$toserve,d$calendar,mean))][6:9])*1
+> d$z.conv = (d$calendar %in% c(1:9)[order(tapply(d$conviction,d$calendar,mean))][6:9])*1
+> d$z.prob = (d$calendar %in% c(1:9)[order(tapply(d$probat,d$calendar,mean))][6:9])*1
+> 
+> # The binary variables are the same except for 1 judge:
+> c(1:9)[order(tapply(d$incarcerate,d$calendar,mean))][6:9]
+[1] 9 6 4 3
+> c(1:9)[order(tapply(d$toserve,d$calendar,mean))][6:9]
+[1] 9 2 4 3
+> c(1:9)[order(tapply(d$conviction,d$calendar,mean))][6:9]
+[1] 9 6 2 4
+> c(1:9)[order(tapply(d$probat,d$calendar,mean))][6:9]
+[1] 3 1 5 6
+> 
+> d$calendar = as.factor(d$calendar)
+> 
+> ####################################################################################
+> # Define date variables
+> ####################################################################################
+> 
+> d$laterarr.date <- as.Date(d$laterarrdate,format="%m/%d/%Y")
+> d$laterarr.date[is.na(d$laterarr.date)] = "3000-01-01"
+> cat("Check: ",sum(is.na(d$laterarr.date))==0,"\n")
+Check:  TRUE 
+> 
+> d$dispdate <- as.Date(d$dispdate,format="%m/%d/%Y")
+> cat("Check: ",sum(is.na(d$dispdate))==0,"\n")
+Check:  TRUE 
+> 
+> 
+> ####################################################################################
+> # Estimation with incarceration and probation as endogenous sentencing outcomes
+> ####################################################################################
+> 
+> start.month=1
+> months.vec <- seq(start.month,209,by=1)
+> tsls.coef.dynamic <- rep(NA,length(months.vec))
+> 
+> for (j in c(start.month:max(months.vec))){
++   
++   ### Calculating a recidivism measure for a re-arrest in the first "j" months after the disposition date:
++   date.disp.plus.j.months <- d[,"dispdate"]
++   #month(date.disp.plus.j.months) = month(date.disp.plus.j.months)+j
++   week(date.disp.plus.j.months) = week(date.disp.plus.j.months)+j
++   
++   d$laterarr.dynamic <-  (difftime(d$laterarr.date,date.disp.plus.j.months, units = "weeks")<=0)*1 
++   
++   formula = as.formula(paste("laterarr.dynamic~","incarcerate+probat+",paste(cov.names,collapse="+"),"|",
++                              "z.incar+z.prob+",
++                              paste(cov.names,collapse="+")))
++   i = j-start.month+1
++   tsls.coef.dynamic[i] <- coef(ivreg(formula,data=d))[2]
++   
++ }
+> 
+> 
+> # check that results match the recdivism measure with 4 years:
+> formula = as.formula(paste("laterarr~","incarcerate+probat+",paste(cov.names,collapse="+"),"|",
++                            "z.incar+z.prob+",
++                            paste(cov.names,collapse="+")))
+> 
+> cat("Check: ",tsls.coef.dynamic[length(tsls.coef.dynamic)]==coef(ivreg(formula,data=d))[2])
+Check:  TRUE> 
+> 
+> ################################################################################################
+> # Figure:
+> ################################################################################################
+> 
+> dp = data.frame(months=months.vec, tsls = tsls.coef.dynamic)
+> 
+> p <- ggplot(dp,aes(x=months,y=tsls))+
++   geom_point(size=0.8)+geom_line()+
++   labs(x="\n Period from disposition date (weeks)",y="Incarceration effect - TSLS estimates \n")+
++   theme_bw()+
++   theme(legend.position="")+
++   theme(panel.border = element_blank(), 
++         axis.line.x = element_line(colour = "black"),
++         axis.line.y = element_line(colour = "black"))+
++   theme(panel.grid.major.x = element_blank(),
++         panel.grid.minor.x = element_blank())
+> 
+> 
+> #geom_vline(xintercept=min(months.vec[tsls.coef.dynamic>=0])-0.5,lty=2,col="red4",lwd=0.7)
+> p <- p+
++   annotate("text",x = 30, y=0.13-0.02,label="Incapacitation effect \n dominates",col="red4",size=3)+
++   annotate("segment",
++            x = 6, y = 0.1-0.02, xend = min(months.vec[tsls.coef.dynamic>=0 & months.vec>50])-2, yend = 0.1-0.02,
++            arrow=arrow(length=unit(.2, "cm")))+
++   annotate("segment",
++            x = min(months.vec[tsls.coef.dynamic>=0 & months.vec>50])-2, y = 0.1-0.02, xend=6, yend=0.1-0.02,
++            arrow=arrow(length=unit(.2, "cm")))
+> 
+> p <- p+geom_hline(yintercept=coef(ivreg(formula,data=d))[2],col="blue4",lty=1,lwd=0.4)+
++   annotate("text",x = 60, y=0.4,label="TSLS estimate using 4 years from disposition",col="blue4",size=3)
+> 
+> 
+> setwd(dirFigures)
+> ggsave("incar_effect_dynamic_probat.pdf",plot=p, width = 6, height = 4.5)
+> 
+> ### statistics:
+> # The week in which the incapacitation effect stops dominating:
+> print(min(months.vec[tsls.coef.dynamic>=0 & months.vec>50]))
+[1] 52
+> 
+> 
+> 
+> ####################################################################################
+> # Estimation with only incarceration as endogenous sentencing outcomes
+> ####################################################################################
+> 
+> start.month=1
+> months.vec <- seq(start.month,209,by=1)
+> tsls.coef.dynamic <- rep(NA,length(months.vec))
+> 
+> for (j in c(start.month:max(months.vec))){
++   
++   ### Calculating a recidivism measure for a re-arrest in the first "j" months after the disposition date:
++   date.disp.plus.j.months <- d[,"dispdate"]
++   #month(date.disp.plus.j.months) = month(date.disp.plus.j.months)+j
++   week(date.disp.plus.j.months) = week(date.disp.plus.j.months)+j
++   
++   d$laterarr.dynamic <-  (difftime(d$laterarr.date,date.disp.plus.j.months, units = "weeks")<=0)*1 
++   
++   formula = as.formula(paste("laterarr.dynamic~","incarcerate+",paste(cov.names,collapse="+"),"|",
++                              "z.incar+",
++                              paste(cov.names,collapse="+")))
++   i = j-start.month+1
++   tsls.coef.dynamic[i] <- coef(ivreg(formula,data=d))[2]
++   
++ }
+> 
+> 
+> # check that results match the recdivism measure with 4 years:
+> formula = as.formula(paste("laterarr~","incarcerate+",paste(cov.names,collapse="+"),"|",
++                            "z.incar+",
++                            paste(cov.names,collapse="+")))
+> 
+> cat("Check: ",tsls.coef.dynamic[length(tsls.coef.dynamic)]==coef(ivreg(formula,data=d))[2])
+Check:  TRUE> 
+> 
+> ################################################################################################
+> # Figure:
+> ################################################################################################
+> 
+> dp = data.frame(months=months.vec, tsls = tsls.coef.dynamic)
+> 
+> p <- ggplot(dp,aes(x=months,y=tsls))+
++   geom_point(size=0.8)+geom_line()+
++   labs(x="\n Period from disposition date (weeks)",y="Incarceration effect - TSLS estimates \n")+
++   theme_bw()+
++   theme(panel.border = element_blank(), 
++         axis.line.x = element_line(colour = "black"),
++         axis.line.y = element_line(colour = "black"))+
++   theme(panel.grid.major.x = element_blank(),
++         panel.grid.minor.x = element_blank())
+> 
+> 
+> #geom_vline(xintercept=min(months.vec[tsls.coef.dynamic>=0])-0.5,lty=2,col="red4",lwd=0.7)
+> p <- p+
++   annotate("text",x = 30, y=0.13-0.02,label="Incapacitation effect \n dominates",col="red4",size=3)+
++   annotate("segment",
++            x = 6, y = 0.1-0.02, xend = min(months.vec[tsls.coef.dynamic>=0 & months.vec>50])-2, yend = 0.1-0.02,
++            arrow=arrow(length=unit(.2, "cm")))+
++   annotate("segment",
++            x = min(months.vec[tsls.coef.dynamic>=0 & months.vec>50])-2, y = 0.1-0.02, xend=6, yend=0.1-0.02,
++            arrow=arrow(length=unit(.2, "cm")))
+> 
+> p <- p+geom_hline(yintercept=coef(ivreg(formula,data=d))[2],col="blue4",lty=1,lwd=0.4)+
++   annotate("text",x = 60, y=0.4,label="TSLS estimate using 4 years from disposition",col="blue4",size=3)
+> 
+> 
+> setwd(dirFigures)
+> ggsave("incar_effect_dynamic.pdf",plot=p, width = 6, height = 4.5)
+> 
+> ### statistics:
+> # The week in which the incapacitation effect stops dominating:
+> print(min(months.vec[tsls.coef.dynamic>=0 & months.vec>50]))
+[1] 56
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+ 18.629  33.523  17.545 
