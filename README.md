@@ -2,8 +2,8 @@
 **Description**: This repository provides all the code and data to replicate the tables and figures that are presented in Shem-Tov (2016). 
 
 ### Data
-* XXX: Replication data from Green and Winik (2010) 
-* XXX: Data on arrests by cause of arrest over time. The source of the data is the FBI Uniform Crime Report.   
+* GreenWinik_Criminology_2010_LimitedAnonymizedDataset.2.dta: Replication data from Green and Winik (2010) 
+* drug_arrests_over_time.csv: Data on arrests by cause of arrest over time. The source of the data is the FBI Uniform Crime Report.   
 
 ### Code
 All the code in written in the **R** statistical programming launguage. For each code file (.R) the associated log file (.Rout) is also included. 
