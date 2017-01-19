@@ -19,6 +19,7 @@ All the code is written in the **R** statistical programming launguage. For each
 * *compliers_characteristics.R* and *compliers_characteristics.Rout*: Tables 1, 14, 15.
 * *first_stage_reg.R* and *first_stage_reg.Rout*: Table 5.
 * *reduce_form_reg_coef.R* and *reduce_form_reg_coef.Rout*: Tables 6 and 7.
-* *tsls_reg.R* and *tsls_reg.Rout*: .
+* *reduce_multiple_iv.R* and *reduce_multiple_iv.Rout*: Tables 8 and 9.
+* *tsls_reg.R* and *tsls_reg.Rout*: Tables 10 and 11.
 
 
