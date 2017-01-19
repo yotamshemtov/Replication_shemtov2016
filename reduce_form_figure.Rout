@@ -1,0 +1,578 @@
+
+R version 3.3.0 beta (2016-03-30 r70404) -- "Supposedly Educational"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> 
+> ###########################################################################################################################
+> # Dynamic effect of incarceration according to different time measures of recidivism
+> ###########################################################################################################################
+> 
+> rm(list=ls())
+> library(ggplot2)
+> library(xtable)
+> library(foreign)
+> library(MASS)
+> library(dummies)
+dummies-1.5.6 provided by Decision Patterns
+
+> library(stargazer)
+
+Please cite as: 
+
+ Hlavac, Marek (2015). stargazer: Well-Formatted Regression and Summary Statistics Tables.
+ R package version 5.2. http://CRAN.R-project.org/package=stargazer 
+
+> library(ggthemes)
+> library(AER)
+Loading required package: car
+Loading required package: lmtest
+Loading required package: zoo
+
+Attaching package: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+Loading required package: sandwich
+Loading required package: survival
+Loading required package: splines
+> library(multiwayvcov)
+> 
+> library(reshape)
+> 
+> # Date and time packages:
+> library(lubridate)
+
+Attaching package: ‘lubridate’
+
+The following object is masked from ‘package:reshape’:
+
+    stamp
+
+The following object is masked from ‘package:base’:
+
+    date
+
+> 
+> # loading the data:
+> d=read.dta("~/Dropbox/crime/recidivism/data/GreenWinik_Criminology_2010_LimitedAnonymizedDataset.2.dta")
+> dirCode = "~/Dropbox/crime/recidivism/Rcode"
+> dirFigures = "~/Dropbox/crime/recidivism/figures"
+> 
+> cov.names = c("age" ,"agesq" ,"female" ,"nonblack" ,"priorarr" ,"priordrugarr" ,
++               "priorfelarr" ,"priorfeldrugarr" ,"priorcon" ,"priordrugcon" ,"priorfelcon" ,
++               "priorfeldrugcon" ,"pwid" ,"dist" ,"marijuana" ,"cocaine" ,"crack" ,
++               "heroin" ,"pcp" ,"otherdrug" ,"nondrug")
+> head(d)
+  pickupdate birthyear gender race disposition  dispdate   sentdate
+1  7/23/2002      1979      M    B   Dismissed 3/27/2003           
+2 11/27/2002      1980      M    B        Plea 1/21/2003   4/3/2003
+3   1/6/2003      1979      M    B   Dismissed 1/24/2003           
+4 11/14/2002      1964      F    B        Plea  4/9/2003 12/12/2003
+5 11/14/2002      1974      F    B   Dismissed 3/20/2003           
+6  1/30/2003      1972      M    B        Plea  4/8/2003  6/10/2003
+  felonycharges highestcharge nondrug     drug1     drug2 incarc suspend probat
+1             1          pwid       0       pcp         0      0    0.00      0
+2             1          dist       0 marijuana         0     12    7.16     24
+3             1          pwid       0    heroin marijuana      0    0.00      0
+4             1          dist       0   cocaine         0    120  120.00     24
+5             1          pwid       0     crack         0      0    0.00      0
+6             2          dist       1 marijuana         0     12   12.00     12
+  priorarr priorfelarr priordrugarr priorfeldrugarr priorcon priorfelcon
+1        1           0            0               0        0           0
+2        1           1            1               0        1           0
+3        1           0            1               0        1           0
+4        1           1            1               1        1           1
+5        1           0            1               0        0           0
+6        1           1            1               1        1           1
+  priordrugcon priorfeldrugcon laterarr laterarrdate laterfelarr
+1            0               0        1    5/19/2004           1
+2            1               0        1    9/28/2005           1
+3            1               0        1    8/17/2004           1
+4            1               1        0            0           0
+5            0               0        0            0           0
+6            1               1        1    2/17/2005           1
+  laterfelarrdate laterdrugarr laterdrugarrdate laterfeldrugarr
+1       5/19/2004            1        5/19/2004               1
+2       9/28/2005            1        9/28/2005               1
+3       8/17/2004            1        8/17/2004               1
+4               0            0                0               0
+5               0            0                0               0
+6       2/17/2005            1        2/17/2005               1
+  laterfeldrugarrdate latercon latercondate laterfelcon laterfelcondate
+1           5/19/2004        1    7/23/2004           1       7/23/2004
+2           9/28/2005        1   11/14/2005           1      11/14/2005
+3           8/17/2004        1    3/11/2005           0               0
+4                   0        0            0           0               0
+5                   0        0            0           0               0
+6           2/17/2005        1    3/21/2007           1       3/21/2007
+  laterdrugcon laterdrugcondate laterfeldrugcon laterfeldrugcondate probrevoke
+1            1        7/23/2004               1           7/23/2004          0
+2            1       11/14/2005               1          11/14/2005          1
+3            1        3/11/2005               0                   0          0
+4            0                0               0                   0          0
+5            0                0               0                   0          0
+6            1        3/21/2007               1           3/21/2007          0
+  probrevokedate codef clusterid    ccn datacoder cutoffdate1 cutoffdate2
+1              0     0       236 121453         1       17714       17898
+2      2/07/2006     0       668 188341         1       17714       17898
+3              0     0      2803  14713         1       17714       17898
+4              0     0       606 181731         1       17714       17898
+5              0     0       607 181528         1       17714       17898
+6              0     0       934  26093         2       17714       17898
+  cutoffdate3 toserve fullreleasetorecid female nonblack pickupdatecode age
+1       18049    0.00           419.0000      0        0          15544  23
+2       18049    4.84           835.7998      0        0          15671  22
+3       18049    0.00           571.0000      0        0          15711  24
+4       18049    0.00          9999.0000      1        0          15658  38
+5       18049    0.00          9999.0000      1        0          15658  28
+6       18049    0.00           681.0000      0        0          15735  31
+  agesq incjudge calendar1 calendar2 calendar3 calendar4 calendar5 calendar6
+1   529        1         1         0         0         0         0         0
+2   484        1         1         0         0         0         0         0
+3   576        1         1         0         0         0         0         0
+4  1444        1         1         0         0         0         0         0
+5   784        1         1         0         0         0         0         0
+6   961        1         1         0         0         0         0         0
+  calendar7 calendar8 calendar9 calendar incarcerate marijuana cocaine crack
+1         0         0         0        1           0         0       0     0
+2         0         0         0        1           1         1       0     0
+3         0         0         0        1           0         1       0     0
+4         0         0         0        1           0         0       1     0
+5         0         0         0        1           0         0       0     1
+6         0         0         0        1           0         1       0     0
+  heroin pcp otherdrug pwid dist conviction probatnonzero probsuspend
+1      0   1         0    1    0          0             0        0.00
+2      0   0         0    0    1          1             1      171.84
+3      1   0         0    1    0          0             0        0.00
+4      0   0         0    0    1          1             1     2880.00
+5      0   0         0    1    0          0             0        0.00
+6      0   0         0    0    1          1             1      144.00
+> 
+> ####################################################################################
+> ### Define Jackknife IV, leave-one-out estimators
+> ####################################################################################
+> 
+> d$loo.judge = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge[i] = mean(d$incarcerate[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.serve = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.serve[i] = mean(d$toserve[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.conv = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.conv[i] = mean(d$conviction[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.prob = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.prob[i] = mean(d$probat[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> ### Defining binary IV:
+> 
+> d$z.incar = (d$calendar %in% c(1:9)[order(tapply(d$incarcerate,d$calendar,mean))][6:9])*1
+> d$z.serve = (d$calendar %in% c(1:9)[order(tapply(d$toserve,d$calendar,mean))][6:9])*1
+> d$z.conv = (d$calendar %in% c(1:9)[order(tapply(d$conviction,d$calendar,mean))][6:9])*1
+> d$z.prob = (d$calendar %in% c(1:9)[order(tapply(d$probat,d$calendar,mean))][6:9])*1
+> 
+> # The binary variables are the same except for 1 judge:
+> c(1:9)[order(tapply(d$incarcerate,d$calendar,mean))][6:9]
+[1] 9 6 4 3
+> c(1:9)[order(tapply(d$toserve,d$calendar,mean))][6:9]
+[1] 9 2 4 3
+> c(1:9)[order(tapply(d$conviction,d$calendar,mean))][6:9]
+[1] 9 6 2 4
+> c(1:9)[order(tapply(d$probat,d$calendar,mean))][6:9]
+[1] 3 1 5 6
+> 
+> d$calendar = as.factor(d$calendar)
+> 
+> ####################################################################################
+> # Define date variables
+> ####################################################################################
+> 
+> d$laterarr.date <- as.Date(d$laterarrdate,format="%m/%d/%Y")
+> d$laterarr.date[is.na(d$laterarr.date)] = "3000-01-01"
+> cat("Check: ",sum(is.na(d$laterarr.date))==0,"\n")
+Check:  TRUE 
+> 
+> d$dispdate <- as.Date(d$dispdate,format="%m/%d/%Y")
+> cat("Check: ",sum(is.na(d$dispdate))==0,"\n")
+Check:  TRUE 
+> 
+> 
+> ####################################################################################
+> # Reduce Form  - above median calendar vs. below median calendar
+> ####################################################################################
+> 
+> #start.month=3
+> #months.vec <- seq(start.month,12*4,by=1)
+> 
+> start.month=4
+> months.vec <- seq(start.month,209,by=1)
+> reduce.treat <- reduce.control <- rep(NA,length(months.vec))
+> 
+> for (j in c(start.month:max(months.vec))){
++   
++   ### Calculating a recidivism measure for a re-arrest in the first "j" months after the disposition date:
++   date.disp.plus.j.months <- d[,"dispdate"]
++   #month(date.disp.plus.j.months) = month(date.disp.plus.j.months)+j
++   week(date.disp.plus.j.months) = week(date.disp.plus.j.months)+j
++   
++   d$laterarr.dynamic <-  (difftime(d$laterarr.date,date.disp.plus.j.months, units = "weeks")<=0)*1 
++   
++   i = j-start.month+1
++   reduce.treat[i] = mean(d$laterarr.dynamic[d$z.incar==1])
++   reduce.control[i] = mean(d$laterarr.dynamic[d$z.incar==0])
++   
++ }
+> 
+> 
+> 
+> ################################################################################################
+> # Figure:
+> ################################################################################################
+> 
+> dp = data.frame(months=months.vec, reduce.treat, reduce.control)
+> dp <- melt(dp,id.vars="months")
+> colnames(dp) <- c("months","group","rearrest")
+> head(dp)
+  months        group   rearrest
+1      4 reduce.treat 0.01797753
+2      5 reduce.treat 0.02022472
+3      6 reduce.treat 0.02247191
+4      7 reduce.treat 0.02921348
+5      8 reduce.treat 0.02921348
+6      9 reduce.treat 0.03370787
+> 
+> levels(dp$group) <- c("Above median calendar","Below median calendar")
+> 
+> p <- ggplot(dp,aes(x=months,y=rearrest,col=group,shape=group))+
++   geom_line(lwd=0.8)+
++   labs(x="\n Period from disposition date (weeks)",y="Ave. re-arrests  \n")+
++   theme_bw()+
++   theme(panel.border = element_blank(),axis.line = element_line(colour = "black"))+
++   scale_colour_economist()+
++   theme(legend.position="bottom")+
++   theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank() )+
++   theme(panel.border = element_blank(), 
++         axis.line.x = element_line(colour = "black"),
++         axis.line.y = element_line(colour = "black"))
+> 
+> p <- p + 
++   annotate("segment",
++            x = 4, y = 0.2+0.01, xend = 52, yend = 0.2+0.01,
++            arrow=arrow(length=unit(.2, "cm")))+
++ annotate("segment",
++          x = 52, y = 0.2+0.01, xend=4, yend=0.2+0.01,
++          arrow=arrow(length=unit(.2, "cm")))+
++   annotate("text",x = 30, y=0.2+0.04,label="Incapacitation effect \n dominates",col="red4",size=3)
+>   
+> p <- p+geom_vline(xintercept=53,col="red4",lty=2)+
++   annotate("text",x=70,y=0.6,label="53 weeks",col="red4",size=4)
+> 
+> 
+> 
+> setwd(dirFigures)
+> pdf("above_vs_below_median_reduce_form.pdf")
+> print(p)
+> dev.off()
+null device 
+          1 
+> 
+> 
+> 
+> ####################################################################################
+> # Incarcerated vs. not-incarcerated
+> ####################################################################################
+> 
+> ### Calculating the DFL weights:
+> 
+> ps.model = glm(paste("incarcerate~",paste(cov.names,collapse="+")),data=d,family=binomial(link="logit"))
+> summary(ps.model)
+
+Call:
+glm(formula = paste("incarcerate~", paste(cov.names, collapse = "+")), 
+    family = binomial(link = "logit"), data = d)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.8108  -0.9972  -0.6156   1.0783   2.3402  
+
+Coefficients:
+                  Estimate Std. Error z value Pr(>|z|)   
+(Intercept)     -0.3415798  0.8000868  -0.427  0.66943   
+age             -0.0772079  0.0423429  -1.823  0.06824 . 
+agesq            0.0009419  0.0005560   1.694  0.09025 . 
+female          -0.6545416  0.2756599  -2.374  0.01757 * 
+nonblack         0.5295600  0.4742953   1.117  0.26420   
+priorarr        -0.4365379  0.3608438  -1.210  0.22637   
+priordrugarr     0.1492415  0.3087967   0.483  0.62888   
+priorfelarr      0.4369485  0.2953234   1.480  0.13899   
+priorfeldrugarr -0.5015186  0.3030835  -1.655  0.09798 . 
+priorcon         0.5410464  0.3303439   1.638  0.10146   
+priordrugcon     0.6347280  0.3181076   1.995  0.04601 * 
+priorfelcon      0.2904509  0.3090640   0.940  0.34733   
+priorfeldrugcon  0.4042628  0.3326859   1.215  0.22431   
+pwid             0.5699095  0.2604814   2.188  0.02868 * 
+dist             0.8130303  0.2648141   3.070  0.00214 **
+marijuana       -0.1595727  0.2444643  -0.653  0.51392   
+cocaine         -0.1787886  0.2497982  -0.716  0.47416   
+crack           -0.1623992  0.2799619  -0.580  0.56186   
+heroin          -0.4036342  0.2703803  -1.493  0.13548   
+pcp              0.3922149  0.3863785   1.015  0.31006   
+otherdrug       -0.6540431  0.4738585  -1.380  0.16751   
+nondrug          0.4795590  0.2073765   2.313  0.02075 * 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 1363.2  on 1002  degrees of freedom
+Residual deviance: 1225.0  on  981  degrees of freedom
+AIC: 1269
+
+Number of Fisher Scoring iterations: 4
+
+> 
+> ps <- ps.model$fit
+> pd <- mean(d$incarcerate)
+> 
+> # DFL re-weighting
+> weight0 = ((1-pd)/pd)*(ps/(1-ps))
+> weight=rep(1,dim(d)[1])
+> weight=replace(weight,d$incarcerate==0,weight0[d$incarcerate==0])
+> 
+> # Ppropensity score re-weighting
+> #weight = rep(NA,dim(d)[1])
+> #weight[d$incarcerate==1]=1/ps[d$incarcerate==1]
+> #weight[d$incarcerate==0]=1/(1-ps[d$incarcerate==0])
+> 
+> # Validating the DFL re-weighting generates balance on observables between incarcerated and non-incarcerated defendants
+> balance.model.lm <- lm(paste("incarcerate~",paste(cov.names,collapse="+")),data=d,weights=weight)
+> summary(balance.model.lm)
+
+Call:
+lm(formula = paste("incarcerate~", paste(cov.names, collapse = "+")), 
+    data = d, weights = weight)
+
+Weighted Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.8966 -0.3978 -0.2306  0.5799  0.6397 
+
+Coefficients:
+                  Estimate Std. Error t value Pr(>|t|)  
+(Intercept)      4.159e-01  1.820e-01   2.284   0.0226 *
+age              1.838e-03  9.624e-03   0.191   0.8486  
+agesq           -2.474e-05  1.259e-04  -0.196   0.8443  
+female          -1.754e-04  7.476e-02  -0.002   0.9981  
+nonblack         1.037e-01  1.188e-01   0.873   0.3828  
+priorarr         2.311e-02  9.812e-02   0.235   0.8139  
+priordrugarr     1.388e-02  8.130e-02   0.171   0.8644  
+priorfelarr     -2.763e-02  7.508e-02  -0.368   0.7129  
+priorfeldrugarr  1.106e-02  7.465e-02   0.148   0.8823  
+priorcon        -1.417e-02  8.636e-02  -0.164   0.8697  
+priordrugcon    -5.738e-03  7.861e-02  -0.073   0.9418  
+priorfelcon      3.384e-02  7.398e-02   0.457   0.6474  
+priorfeldrugcon -2.501e-02  7.937e-02  -0.315   0.7527  
+pwid            -2.509e-02  5.217e-02  -0.481   0.6307  
+dist            -2.309e-02  5.388e-02  -0.429   0.6684  
+marijuana       -9.253e-03  5.653e-02  -0.164   0.8700  
+cocaine         -2.276e-03  5.694e-02  -0.040   0.9681  
+crack           -1.441e-02  6.296e-02  -0.229   0.8190  
+heroin          -1.710e-02  6.286e-02  -0.272   0.7856  
+pcp             -2.700e-02  8.365e-02  -0.323   0.7469  
+otherdrug       -1.287e-02  1.152e-01  -0.112   0.9111  
+nondrug         -2.199e-02  4.312e-02  -0.510   0.6101  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.4988 on 981 degrees of freedom
+Multiple R-squared:  0.002292,	Adjusted R-squared:  -0.01907 
+F-statistic: 0.1073 on 21 and 981 DF,  p-value: 1
+
+> 
+> stargazer(balance.model.lm)
+
+% Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Wed, Jan 18, 2017 - 10:06:55 PM
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{1}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-2} 
+\\[-1.8ex] & incarcerate\textasciitilde \\ 
+\hline \\[-1.8ex] 
+ age & 0.002 \\ 
+  & (0.010) \\ 
+  & \\ 
+ agesq & $-$0.00002 \\ 
+  & (0.0001) \\ 
+  & \\ 
+ female & $-$0.0002 \\ 
+  & (0.075) \\ 
+  & \\ 
+ nonblack & 0.104 \\ 
+  & (0.119) \\ 
+  & \\ 
+ priorarr & 0.023 \\ 
+  & (0.098) \\ 
+  & \\ 
+ priordrugarr & 0.014 \\ 
+  & (0.081) \\ 
+  & \\ 
+ priorfelarr & $-$0.028 \\ 
+  & (0.075) \\ 
+  & \\ 
+ priorfeldrugarr & 0.011 \\ 
+  & (0.075) \\ 
+  & \\ 
+ priorcon & $-$0.014 \\ 
+  & (0.086) \\ 
+  & \\ 
+ priordrugcon & $-$0.006 \\ 
+  & (0.079) \\ 
+  & \\ 
+ priorfelcon & 0.034 \\ 
+  & (0.074) \\ 
+  & \\ 
+ priorfeldrugcon & $-$0.025 \\ 
+  & (0.079) \\ 
+  & \\ 
+ pwid & $-$0.025 \\ 
+  & (0.052) \\ 
+  & \\ 
+ dist & $-$0.023 \\ 
+  & (0.054) \\ 
+  & \\ 
+ marijuana & $-$0.009 \\ 
+  & (0.057) \\ 
+  & \\ 
+ cocaine & $-$0.002 \\ 
+  & (0.057) \\ 
+  & \\ 
+ crack & $-$0.014 \\ 
+  & (0.063) \\ 
+  & \\ 
+ heroin & $-$0.017 \\ 
+  & (0.063) \\ 
+  & \\ 
+ pcp & $-$0.027 \\ 
+  & (0.084) \\ 
+  & \\ 
+ otherdrug & $-$0.013 \\ 
+  & (0.115) \\ 
+  & \\ 
+ nondrug & $-$0.022 \\ 
+  & (0.043) \\ 
+  & \\ 
+ Constant & 0.416$^{**}$ \\ 
+  & (0.182) \\ 
+  & \\ 
+\hline \\[-1.8ex] 
+Observations & 1,003 \\ 
+R$^{2}$ & 0.002 \\ 
+Adjusted R$^{2}$ & $-$0.019 \\ 
+Residual Std. Error & 0.499 (df = 981) \\ 
+F Statistic & 0.107 (df = 21; 981) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{1}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+> 
+> 
+> start.month=4
+> months.vec <- seq(start.month,209,by=1)
+> incarcerated <- not.incarcerated <- not.incarcerated.dfl <- rep(NA,length(months.vec))
+> 
+> for (j in c(start.month:max(months.vec))){
++   
++   ### Calculating a recidivism measure for a re-arrest in the first "j" months after the disposition date:
++   date.disp.plus.j.months <- d[,"dispdate"]
++   #month(date.disp.plus.j.months) = month(date.disp.plus.j.months)+j
++   week(date.disp.plus.j.months) = week(date.disp.plus.j.months)+j
++   
++   d$laterarr.dynamic <-  (difftime(d$laterarr.date,date.disp.plus.j.months, units = "weeks")<=0)*1 
++   
++   i = j-start.month+1
++   
++   incarcerated[i] = mean(d$laterarr.dynamic[d$incarcerate==1])
++   not.incarcerated[i] = mean(d$laterarr.dynamic[d$incarcerate==0])
++   not.incarcerated.dfl[i] = weighted.mean(d$laterarr.dynamic[d$incarcerate==0],w=weight[d$incarcerate==0])
++   
++ }
+> 
+> 
+> dp = data.frame(months=months.vec, incarcerated, not.incarcerated,not.incarcerated.dfl)
+> dp <- melt(dp,id.vars="months")
+> dp <- rename(dp,c(variable="group",value="rearrest"))
+> head(dp)
+  months        group    rearrest
+1      4 incarcerated 0.009546539
+2      5 incarcerated 0.009546539
+3      6 incarcerated 0.009546539
+4      7 incarcerated 0.016706444
+5      8 incarcerated 0.021479714
+6      9 incarcerated 0.028639618
+> 
+> levels(dp$group) <- c("Incarcerated","Not-Incarcerated","Not-Incarcerated DFL re-weighted ")
+> #dp$rearrest <- round(100*dp$rearrest,dig=1)
+> 
+> p <- ggplot(dp,aes(x=months,y=rearrest,col=group,shape=group,lty=group))+
++   geom_line(lwd=0.8)+
++   labs(x="\n Period from disposition date (weeks)",y="Ave. re-arrests  \n")+
++   theme_bw()+
++   theme(panel.border = element_blank(),axis.line = element_line(colour = "black"))+
++   scale_colour_manual(values=c("red4","black","black"))+
++   scale_linetype_manual(values=c(1,1,2))+
++   theme(legend.position="bottom")+
++   guides(col=guide_legend(title=""),
++          linetype=guide_legend(title=""))+
++   theme(panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank() )+
++   theme(panel.border = element_blank(), 
++         axis.line.x = element_line(colour = "black"),
++         axis.line.y = element_line(colour = "black"))
+> 
+> 
+> setwd(dirFigures)
+> 
+> pdf("incarcerated_vs_non_incarcerated.pdf")
+> print(p)
+> dev.off()
+null device 
+          1 
+> 
+> 
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  5.465   0.820   5.497 
