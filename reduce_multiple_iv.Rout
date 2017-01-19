@@ -1,0 +1,377 @@
+
+R version 3.3.0 beta (2016-03-30 r70404) -- "Supposedly Educational"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> ###########################################################################################
+> # Reduce form table of multiple instruments using LOO and binary IV (not judge dummies)
+> ###########################################################################################
+> 
+> rm(list=ls())
+> library(ggplot2)
+> library(xtable)
+> library(foreign)
+> library(MASS)
+> library(dummies)
+dummies-1.5.6 provided by Decision Patterns
+
+> library(stargazer)
+
+Please cite as: 
+
+ Hlavac, Marek (2015). stargazer: Well-Formatted Regression and Summary Statistics Tables.
+ R package version 5.2. http://CRAN.R-project.org/package=stargazer 
+
+> library(ggthemes)
+> library(AER)
+Loading required package: car
+Loading required package: lmtest
+Loading required package: zoo
+
+Attaching package: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+Loading required package: sandwich
+Loading required package: survival
+Loading required package: splines
+> library(multiwayvcov)
+> 
+> # loading the data:
+> d=read.dta("~/Dropbox/crime/recidivism/data/GreenWinik_Criminology_2010_LimitedAnonymizedDataset.2.dta")
+> dirCode = "~/Dropbox/crime/recidivism/Rcode"
+> dirFigures = "~/Dropbox/crime/recidivism/figures"
+> 
+> cov.names = c("age" ,"agesq" ,"female" ,"nonblack" ,"priorarr" ,"priordrugarr" ,
++               "priorfelarr" ,"priorfeldrugarr" ,"priorcon" ,"priordrugcon" ,"priorfelcon" ,
++               "priorfeldrugcon" ,"pwid" ,"dist" ,"marijuana" ,"cocaine" ,"crack" ,
++               "heroin" ,"pcp" ,"otherdrug" ,"nondrug")
+> head(d)
+  pickupdate birthyear gender race disposition  dispdate   sentdate
+1  7/23/2002      1979      M    B   Dismissed 3/27/2003           
+2 11/27/2002      1980      M    B        Plea 1/21/2003   4/3/2003
+3   1/6/2003      1979      M    B   Dismissed 1/24/2003           
+4 11/14/2002      1964      F    B        Plea  4/9/2003 12/12/2003
+5 11/14/2002      1974      F    B   Dismissed 3/20/2003           
+6  1/30/2003      1972      M    B        Plea  4/8/2003  6/10/2003
+  felonycharges highestcharge nondrug     drug1     drug2 incarc suspend probat
+1             1          pwid       0       pcp         0      0    0.00      0
+2             1          dist       0 marijuana         0     12    7.16     24
+3             1          pwid       0    heroin marijuana      0    0.00      0
+4             1          dist       0   cocaine         0    120  120.00     24
+5             1          pwid       0     crack         0      0    0.00      0
+6             2          dist       1 marijuana         0     12   12.00     12
+  priorarr priorfelarr priordrugarr priorfeldrugarr priorcon priorfelcon
+1        1           0            0               0        0           0
+2        1           1            1               0        1           0
+3        1           0            1               0        1           0
+4        1           1            1               1        1           1
+5        1           0            1               0        0           0
+6        1           1            1               1        1           1
+  priordrugcon priorfeldrugcon laterarr laterarrdate laterfelarr
+1            0               0        1    5/19/2004           1
+2            1               0        1    9/28/2005           1
+3            1               0        1    8/17/2004           1
+4            1               1        0            0           0
+5            0               0        0            0           0
+6            1               1        1    2/17/2005           1
+  laterfelarrdate laterdrugarr laterdrugarrdate laterfeldrugarr
+1       5/19/2004            1        5/19/2004               1
+2       9/28/2005            1        9/28/2005               1
+3       8/17/2004            1        8/17/2004               1
+4               0            0                0               0
+5               0            0                0               0
+6       2/17/2005            1        2/17/2005               1
+  laterfeldrugarrdate latercon latercondate laterfelcon laterfelcondate
+1           5/19/2004        1    7/23/2004           1       7/23/2004
+2           9/28/2005        1   11/14/2005           1      11/14/2005
+3           8/17/2004        1    3/11/2005           0               0
+4                   0        0            0           0               0
+5                   0        0            0           0               0
+6           2/17/2005        1    3/21/2007           1       3/21/2007
+  laterdrugcon laterdrugcondate laterfeldrugcon laterfeldrugcondate probrevoke
+1            1        7/23/2004               1           7/23/2004          0
+2            1       11/14/2005               1          11/14/2005          1
+3            1        3/11/2005               0                   0          0
+4            0                0               0                   0          0
+5            0                0               0                   0          0
+6            1        3/21/2007               1           3/21/2007          0
+  probrevokedate codef clusterid    ccn datacoder cutoffdate1 cutoffdate2
+1              0     0       236 121453         1       17714       17898
+2      2/07/2006     0       668 188341         1       17714       17898
+3              0     0      2803  14713         1       17714       17898
+4              0     0       606 181731         1       17714       17898
+5              0     0       607 181528         1       17714       17898
+6              0     0       934  26093         2       17714       17898
+  cutoffdate3 toserve fullreleasetorecid female nonblack pickupdatecode age
+1       18049    0.00           419.0000      0        0          15544  23
+2       18049    4.84           835.7998      0        0          15671  22
+3       18049    0.00           571.0000      0        0          15711  24
+4       18049    0.00          9999.0000      1        0          15658  38
+5       18049    0.00          9999.0000      1        0          15658  28
+6       18049    0.00           681.0000      0        0          15735  31
+  agesq incjudge calendar1 calendar2 calendar3 calendar4 calendar5 calendar6
+1   529        1         1         0         0         0         0         0
+2   484        1         1         0         0         0         0         0
+3   576        1         1         0         0         0         0         0
+4  1444        1         1         0         0         0         0         0
+5   784        1         1         0         0         0         0         0
+6   961        1         1         0         0         0         0         0
+  calendar7 calendar8 calendar9 calendar incarcerate marijuana cocaine crack
+1         0         0         0        1           0         0       0     0
+2         0         0         0        1           1         1       0     0
+3         0         0         0        1           0         1       0     0
+4         0         0         0        1           0         0       1     0
+5         0         0         0        1           0         0       0     1
+6         0         0         0        1           0         1       0     0
+  heroin pcp otherdrug pwid dist conviction probatnonzero probsuspend
+1      0   1         0    1    0          0             0        0.00
+2      0   0         0    0    1          1             1      171.84
+3      1   0         0    1    0          0             0        0.00
+4      0   0         0    0    1          1             1     2880.00
+5      0   0         0    1    0          0             0        0.00
+6      0   0         0    0    1          1             1      144.00
+> 
+> data.labels <- cbind(attributes(d)$names,attributes(d)$var.label)
+> 
+> 
+> ######################################################################################
+> ### Define Jackknife IV, leave-one-out estimators
+> 
+> d$loo.judge = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge[i] = mean(d$incarcerate[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.serve = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.serve[i] = mean(d$toserve[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.conv = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.conv[i] = mean(d$conviction[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> d$loo.judge.prob = rep(NA,dim(d)[1])
+> for (i in c(1:dim(d)[1])){
++   d$loo.judge.prob[i] = mean(d$probat[-i][d$calendar[-i]==d$calendar[i]])
++ }
+> 
+> ### Defining binary IV:
+> 
+> d$z.incar = (d$calendar %in% c(1:9)[order(tapply(d$incarcerate,d$calendar,mean))][6:9])*1
+> d$z.serve = (d$calendar %in% c(1:9)[order(tapply(d$toserve,d$calendar,mean))][6:9])*1
+> d$z.conv = (d$calendar %in% c(1:9)[order(tapply(d$conviction,d$calendar,mean))][6:9])*1
+> d$z.prob = (d$calendar %in% c(1:9)[order(tapply(d$probat,d$calendar,mean))][6:9])*1
+> 
+> # The binary variables are the same except for 1 judge:
+> c(1:9)[order(tapply(d$incarcerate,d$calendar,mean))][6:9]
+[1] 9 6 4 3
+> c(1:9)[order(tapply(d$toserve,d$calendar,mean))][6:9]
+[1] 9 2 4 3
+> c(1:9)[order(tapply(d$conviction,d$calendar,mean))][6:9]
+[1] 9 6 2 4
+> c(1:9)[order(tapply(d$probat,d$calendar,mean))][6:9]
+[1] 3 1 5 6
+> 
+> ###########################################
+> ### Data arrangings ###
+> ###########################################
+> d$calendar = as.factor(d$calendar)
+> 
+> ###########################################
+> # LOO mean instrument
+> ###########################################
+> 
+> ### Future arresrt ###
+> 
+> formula1 = as.formula(paste("laterarr~loo.judge+",paste(cov.names,collapse="+")))
+> tsls1 <- lm(formula1,data=d)
+> 
+> formula2 = as.formula(paste("laterarr~loo.judge+loo.judge.prob+",paste(cov.names,collapse="+")))
+> tsls2 <- lm(formula2,data=d)
+> 
+> formula3 = as.formula(paste("laterarr~loo.judge+loo.judge.prob+loo.judge.conv+",paste(cov.names,collapse="+")))
+> tsls3 <- lm(formula3,data=d)
+> 
+> formula4 = as.formula(paste("laterarr~loo.judge+loo.judge.serve+loo.judge.conv+loo.judge.prob+",paste(cov.names,collapse="+")))
+> tsls4 <- lm(formula4,data=d)
+> 
+> ### Future conviction ###
+> 
+> formula5 = as.formula(paste("latercon~loo.judge+",paste(cov.names,collapse="+")))
+> tsls5 <- lm(formula5,data=d)
+> 
+> formula6 = as.formula(paste("latercon~loo.judge+loo.judge.prob+",paste(cov.names,collapse="+")))
+> tsls6 <- lm(formula6,data=d)
+> 
+> formula7 = as.formula(paste("latercon~loo.judge+loo.judge.prob+loo.judge.conv+",paste(cov.names,collapse="+")))
+> tsls7 <- lm(formula7,data=d)
+> 
+> formula8 = as.formula(paste("latercon~loo.judge+loo.judge.prob+loo.judge.conv+loo.judge.serve+",paste(cov.names,collapse="+")))
+> tsls8 <- lm(formula8,data=d)
+> 
+> 
+> ### Results: ###
+> 
+> # Export table:
+> stargazer(tsls1,tsls2,tsls3,tsls4,tsls5,tsls6,tsls7,tsls8,
++           keep=c("loo.judge","loo.judge.prob","loo.judge.conv","loo.judge.serve"),
++           se = list(sqrt(diag(cluster.vcov(tsls1, d$clusterid))),sqrt(diag(cluster.vcov(tsls2,d$clusterid))),
++                     sqrt(diag(cluster.vcov(tsls3, d$clusterid))),sqrt(diag(cluster.vcov(tsls4, d$clusterid))),
++                     sqrt(diag(cluster.vcov(tsls5, d$clusterid))),sqrt(diag(cluster.vcov(tsls6, d$clusterid))),
++                     sqrt(diag(cluster.vcov(tsls7, d$clusterid))),sqrt(diag(cluster.vcov(tsls8, d$clusterid))))
++           )
+
+% Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Thu, Jan 19, 2017 - 04:01:10 PM
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcccccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{8}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-9} 
+\\[-1.8ex] & \multicolumn{4}{c}{laterarr} & \multicolumn{4}{c}{latercon} \\ 
+\\[-1.8ex] & (1) & (2) & (3) & (4) & (5) & (6) & (7) & (8)\\ 
+\hline \\[-1.8ex] 
+ loo.judge & 0.222$^{*}$ & 0.231$^{**}$ & 0.203$^{*}$ & 0.176 & 0.190$^{*}$ & 0.206$^{*}$ & 0.192 & 0.273$^{*}$ \\ 
+  & (0.114) & (0.115) & (0.123) & (0.158) & (0.108) & (0.110) & (0.118) & (0.144) \\ 
+  & & & & & & & & \\ 
+ loo.judge.serve &  &  &  & 0.003 &  &  &  & $-$0.008 \\ 
+  &  &  &  & (0.010) &  &  &  & (0.010) \\ 
+  & & & & & & & & \\ 
+ loo.judge.prob &  & 0.003 & 0.003 & 0.003 &  & 0.005 & 0.005 & 0.005 \\ 
+  &  & (0.005) & (0.005) & (0.005) &  & (0.005) & (0.005) & (0.005) \\ 
+  & & & & & & & & \\ 
+ loo.judge.conv &  &  & 0.206 & 0.189 &  &  & 0.103 & 0.154 \\ 
+  &  &  & (0.336) & (0.341) &  &  & (0.300) & (0.312) \\ 
+  & & & & & & & & \\ 
+\hline \\[-1.8ex] 
+Observations & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 \\ 
+R$^{2}$ & 0.075 & 0.076 & 0.076 & 0.076 & 0.050 & 0.051 & 0.051 & 0.052 \\ 
+Adjusted R$^{2}$ & 0.055 & 0.054 & 0.053 & 0.052 & 0.029 & 0.029 & 0.028 & 0.028 \\ 
+Residual Std. Error & 0.486 (df = 980) & 0.486 (df = 979) & 0.486 (df = 978) & 0.486 (df = 977) & 0.446 (df = 980) & 0.446 (df = 979) & 0.446 (df = 978) & 0.446 (df = 977) \\ 
+F Statistic & 3.628$^{***}$ (df = 22; 980) & 3.482$^{***}$ (df = 23; 979) & 3.350$^{***}$ (df = 24; 978) & 3.217$^{***}$ (df = 25; 977) & 2.339$^{***}$ (df = 22; 980) & 2.283$^{***}$ (df = 23; 979) & 2.191$^{***}$ (df = 24; 978) & 2.137$^{***}$ (df = 25; 977) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{8}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+> 
+> 
+> ###########################################
+> # Above median indicator instrument
+> ###########################################
+> 
+> 
+> ### Future arresrt ###
+> 
+> formula1 = as.formula(paste("laterarr~z.incar+",paste(cov.names,collapse="+")))
+> tsls1 <- lm(formula1,data=d)
+> 
+> formula2 = as.formula(paste("laterarr~z.incar+z.prob+",paste(cov.names,collapse="+")))
+> tsls2 <- lm(formula2,data=d)
+> 
+> formula3 = as.formula(paste("laterarr~z.incar+z.prob+z.conv+",paste(cov.names,collapse="+")))
+> tsls3 <- lm(formula3,data=d)
+> 
+> formula4 = as.formula(paste("laterarr~z.incar+z.prob+z.conv+z.serve+",paste(cov.names,collapse="+")))
+> tsls4 <- lm(formula4,data=d)
+> 
+> ### Future conviction ###
+> 
+> formula5 = as.formula(paste("latercon~z.incar+",paste(cov.names,collapse="+")))
+> tsls5 <- lm(formula5,data=d)
+> 
+> formula6 = as.formula(paste("latercon~z.incar+z.prob+",paste(cov.names,collapse="+")))
+> tsls6 <- lm(formula6,data=d)
+> 
+> formula7 = as.formula(paste("latercon~z.incar+z.prob+z.conv+",paste(cov.names,collapse="+")))
+> tsls7 <- lm(formula7,data=d)
+> 
+> formula8 = as.formula(paste("latercon~z.incar+z.prob+z.conv+z.serve+",paste(cov.names,collapse="+")))
+> tsls8 <- lm(formula8,data=d)
+> 
+> ### Results: ###
+> # Export table:
+> stargazer(tsls1,tsls2,tsls3,tsls4,tsls5,tsls6,tsls7,tsls8,
++           keep=c("z.incar","z.conv","z.prob","z.serve"),
++           se = list(sqrt(diag(cluster.vcov(tsls1, d$clusterid))),sqrt(diag(cluster.vcov(tsls2,d$clusterid))),
++                     sqrt(diag(cluster.vcov(tsls3, d$clusterid))),sqrt(diag(cluster.vcov(tsls4, d$clusterid))),
++                     sqrt(diag(cluster.vcov(tsls5, d$clusterid))),sqrt(diag(cluster.vcov(tsls6, d$clusterid))),
++                     sqrt(diag(cluster.vcov(tsls7, d$clusterid))),sqrt(diag(cluster.vcov(tsls8, d$clusterid))))
++ )
+
+% Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Thu, Jan 19, 2017 - 04:01:12 PM
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcccccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{8}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-9} 
+\\[-1.8ex] & \multicolumn{4}{c}{laterarr} & \multicolumn{4}{c}{latercon} \\ 
+\\[-1.8ex] & (1) & (2) & (3) & (4) & (5) & (6) & (7) & (8)\\ 
+\hline \\[-1.8ex] 
+ z.incar & 0.078$^{**}$ & 0.077$^{**}$ & 0.077$^{**}$ & 0.071 & 0.069$^{**}$ & 0.068$^{**}$ & 0.060 & 0.084$^{**}$ \\ 
+  & (0.031) & (0.031) & (0.039) & (0.045) & (0.029) & (0.029) & (0.037) & (0.041) \\ 
+  & & & & & & & & \\ 
+ z.prob &  & 0.026 & 0.026 & 0.029 &  & 0.029 & 0.035 & 0.021 \\ 
+  &  & (0.032) & (0.037) & (0.040) &  & (0.029) & (0.034) & (0.035) \\ 
+  & & & & & & & & \\ 
+ z.conv &  &  & 0.001 & $-$0.001 &  &  & 0.014 & 0.022 \\ 
+  &  &  & (0.043) & (0.044) &  &  & (0.040) & (0.042) \\ 
+  & & & & & & & & \\ 
+ z.serve &  &  &  & 0.010 &  &  &  & $-$0.046 \\ 
+  &  &  &  & (0.044) &  &  &  & (0.043) \\ 
+  & & & & & & & & \\ 
+\hline \\[-1.8ex] 
+Observations & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 & 1,003 \\ 
+R$^{2}$ & 0.078 & 0.078 & 0.078 & 0.079 & 0.052 & 0.053 & 0.054 & 0.055 \\ 
+Adjusted R$^{2}$ & 0.057 & 0.057 & 0.056 & 0.055 & 0.031 & 0.031 & 0.030 & 0.031 \\ 
+Residual Std. Error & 0.485 (df = 980) & 0.485 (df = 979) & 0.485 (df = 978) & 0.486 (df = 977) & 0.445 (df = 980) & 0.445 (df = 979) & 0.445 (df = 978) & 0.445 (df = 977) \\ 
+F Statistic & 3.761$^{***}$ (df = 22; 980) & 3.626$^{***}$ (df = 23; 979) & 3.471$^{***}$ (df = 24; 978) & 3.331$^{***}$ (df = 25; 977) & 2.467$^{***}$ (df = 22; 980) & 2.405$^{***}$ (df = 23; 979) & 2.307$^{***}$ (df = 24; 978) & 2.267$^{***}$ (df = 25; 977) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{8}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  6.378   7.633   6.871 
