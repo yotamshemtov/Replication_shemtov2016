@@ -1,0 +1,191 @@
+
+R version 3.3.0 beta (2016-03-30 r70404) -- "Supposedly Educational"
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> ##############################################################
+> #
+> #
+> #
+> #
+> ##############################################################
+> 
+> rm(list=ls())
+> library(ggplot2)
+> library(xtable)
+> library(foreign)
+> library(MASS)
+> library(dummies)
+dummies-1.5.6 provided by Decision Patterns
+
+> library(stargazer)
+
+Please cite as: 
+
+ Hlavac, Marek (2015). stargazer: Well-Formatted Regression and Summary Statistics Tables.
+ R package version 5.2. http://CRAN.R-project.org/package=stargazer 
+
+> library(ggthemes)
+> library(AER)
+Loading required package: car
+Loading required package: lmtest
+Loading required package: zoo
+
+Attaching package: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+Loading required package: sandwich
+Loading required package: survival
+Loading required package: splines
+> library(multiwayvcov)
+> library('dplyr')
+
+Attaching package: ‘dplyr’
+
+The following object is masked from ‘package:MASS’:
+
+    select
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library('tidyr')
+> 
+> # loading the data:
+> dirCode = "~/Dropbox/crime/recidivism/Rcode"
+> dirFigures = "~/Dropbox/crime/recidivism/figures"
+> dirData = "~/Dropbox/crime/recidivism/data"
+> 
+> 
+> setwd(dirData)
+> d = read.csv("drug_arrests_over_time.csv")
+> head(d)
+  year total_arrests total_drug_arrests total_violent_crime_arrests
+1 2014      11205833            1561231                      498666
+2 2013      11302102            1501043                      480360
+3 2012      12196959            1552432                      521196
+4 2011      12408899            1531251                      534704
+5 2010      13120947            1638846                      552077
+6 2009      13687241            1663582                      581765
+  total_property_crime_arrests
+1                      1553980
+2                      1559284
+3                      1646212
+4                      1639883
+5                      1643962
+6                      1728285
+> 
+> # Stayalized facts:
+> cat("Changing in drug arrests 1980 to 1990:",
++     d$total_drug_arrests[d$year==1990 & !is.na(d$year)]/d$total_drug_arrests[d$year==1980 & !is.na(d$year)],"\n")
+Changing in drug arrests 1980 to 1990: 1.875538 
+> 
+> cat("Changing in drug arrests 1990 to 2000:",
++     d$total_drug_arrests[d$year==2000 & !is.na(d$year)]/d$total_drug_arrests[d$year==1990 & !is.na(d$year)],"\n")
+Changing in drug arrests 1990 to 2000: 1.449808 
+> 
+> d$total_drug_arrests[d$year==1980 & !is.na(d$year)]
+[1] 580900
+> d$total_drug_arrests[d$year==1990 & !is.na(d$year)]
+[1] 1089500
+> d$total_drug_arrests[d$year==2000 & !is.na(d$year)]
+[1] 1579566
+> 
+> d$total_arrests[d$year==1980 & !is.na(d$year)]
+[1] 10441000
+> d$total_arrests[d$year==1990 & !is.na(d$year)]
+[1] 14195100
+> d$total_arrests[d$year==2000 & !is.na(d$year)]
+[1] 13980297
+> 
+> # total_arrests
+> d <- d %>% 
++   mutate(total_drug_arrests=100*total_drug_arrests/total_arrests,
++          total_violent_crime_arrests=100*total_violent_crime_arrests/total_arrests,
++          total_property_crime_arrests=100*total_property_crime_arrests/total_arrests)  %>%
++   gather(offence_type,arrests,total_drug_arrests,total_violent_crime_arrests,total_property_crime_arrests)
+> 
+> d$offence_type = as.factor(d$offence_type)
+> levels(d$offence_type) = c("Drug arrests","Property arrests","Violent arrests")
+> 
+> fig <- ggplot(d,aes(x=year,y=arrests,col=offence_type,shape=offence_type))+
++   geom_line()+
++   geom_point(size=3)+
++   labs(x="Year",
++        y="Percent (%) from total arrests")+
++   theme_bw()+
++   theme(legend.position = "bottom")+
++   scale_colour_grey(start=0, end=0.5)+
++   theme(panel.border = element_blank(),axis.line = element_line(colour = "black"))+
++   theme(panel.grid.major.x = element_blank(),panel.grid.minor.x = element_blank())
+> 
+> fig<- fig+guides(col=guide_legend(title="Cause of arrest \n"),
++            shape=guide_legend(title="Cause of arrest \n"))
+>   
+>   
+> 
+> setwd(dirFigures)
+> ggsave(file="drug_arrests_over_time.pdf")
+Saving 7 x 7 in image
+Warning messages:
+1: Removed 3 rows containing missing values (geom_path). 
+2: Removed 3 rows containing missing values (geom_point). 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  3.581   0.317   4.228 
