@@ -3,11 +3,7 @@
 This repository provides all the code and data to replicate the tables and figures that are presented in Shem-Tov (2016). 
 
 ### Data
-* *GreenWinik_Criminology_2010_LimitedAnonymizedDataset.2.dta*: Replication data from Green and Winik (2010). For a detailed description of the data please see:
-
-Green, Donald P. and Daniel Winik, "Using Random Judge Assignments to Estimate the Effects
-of Incarceration and Probation on Recidivism Among Drug Offenders," Criminology, 2010, 48 (2),
-357–387.
+* *GreenWinik_Criminology_2010_LimitedAnonymizedDataset.2.dta*: Replication data from Green and Winik (2010). For a detailed description of the data please see: Green, Donald P. and Daniel Winik, "Using Random Judge Assignments to Estimate the Effects of Incarceration and Probation on Recidivism Among Drug Offenders," Criminology, 2010, 48 (2), 357–387.
 
 * *drug_arrests_over_time.csv*: Data on arrests by cause of arrest over time. The source of the data is the FBI Uniform Crime Report.   
 
