@@ -8,7 +8,7 @@ This repository provides all the code and data to replicate the tables and figur
 * *drug_arrests_over_time.csv*: Data on arrests by cause of arrest over time. The source of the data is the FBI Uniform Crime Report.   
 
 ### Code
-All the code in written in the **R** statistical programming launguage. For each code file (.R) the associated log file (.Rout) is also included. 
+All the code is written in the **R** statistical programming launguage. For each code file (.R) the associated log file (.Rout) is also included. 
 
 ##### **Code file and the tables and figures it replicates**  
 * *drug_crime.R* and *drug_crime.Rout*: Figure 1.   
@@ -19,6 +19,6 @@ All the code in written in the **R** statistical programming launguage. For each
 * *compliers_characteristics.R* and *compliers_characteristics.Rout*: Tables 1, 14, 15.
 * *first_stage_reg.R* and *first_stage_reg.Rout*: Table 5.
 * *reduce_form_reg_coef.R* and *reduce_form_reg_coef.Rout*: Tables 6 and 7.
-* *tsls_reg.R* and *tsls_reg.Rout* : .
+* *tsls_reg.R* and *tsls_reg.Rout*: .
 
 
