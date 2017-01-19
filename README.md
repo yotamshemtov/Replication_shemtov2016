@@ -10,7 +10,7 @@ This repository provides all the code and data to replicate the tables and figur
 ### Code
 All the code is written in the **R** statistical programming launguage. For each code file (.R) the associated log file (.Rout) is also included. 
 
-##### **Code file and the tables and figures it replicates**  
+##### **The Tables and Figures that each code (.R) file replicates**  
 * *drug_crime.R* and *drug_crime.Rout*: Figure 1.   
 * *balance_test.R* and *balance_test.Rout*: Table 3, Table 4, Figure 2. 
 * *figures_first_stage_LOO.R* and *figures_first_stage_LOO.Rout*: Figures 3 and 4.
@@ -20,6 +20,6 @@ All the code is written in the **R** statistical programming launguage. For each
 * *first_stage_reg.R* and *first_stage_reg.Rout*: Table 5.
 * *reduce_form_reg_coef.R* and *reduce_form_reg_coef.Rout*: Tables 6 and 7.
 * *reduce_multiple_iv.R* and *reduce_multiple_iv.Rout*: Tables 8 and 9.
-* *tsls_reg.R* and *tsls_reg.Rout*: Tables 10 and 11.
+* *tsls_reg.R* and *tsls_reg.Rout*: Tables 10, 11, 12 and 13.
 
 
