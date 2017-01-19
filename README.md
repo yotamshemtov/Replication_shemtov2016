@@ -14,5 +14,6 @@ All the code in written in the **R** statistical programming launguage. For each
 * *figures_first_stage_LOO.R* and *figures_first_stage_LOO.Rout*: Figures 3 and 4.
 * *reduce_form_figure.R* and *reduce_form_figure.Rout*: Figure 5.
 * *incarceration_effect_dynamic_figure.R* and *incarceration_effect_dynamic_figure.Rout*: Figures 6 and 7. 
+* *compliers_characteristics.R* and *compliers_characteristics.Rout*: Tables 1, 14, 15.
 
 
